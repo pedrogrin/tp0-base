@@ -41,6 +41,8 @@ def generate_server_lines():
         "      - LOGGING_LEVEL=DEBUG",
         "    networks:",
         "      - testing_net",
+        "    volumes:",
+        "      - ./server/config.ini:/config.ini",
         ""
     ]
 
@@ -57,6 +59,8 @@ def generate_client_lines(clients_size):
             "      - CLI_LOG_LEVEL=DEBUG",
             "    networks:",
             "      - testing_net",
+            "    volumes:",
+            "      - ./client/config.yaml:/config.yaml",
             "    depends_on:",
             "      - server",
             ""
