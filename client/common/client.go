@@ -26,13 +26,15 @@ type ClientConfig struct {
 type Client struct {
 	config ClientConfig
 	conn   net.Conn
+	ticket Ticket
 }
 
 // NewClient Initializes a new client receiving the configuration
 // as a parameter
-func NewClient(config ClientConfig) *Client {
+func NewClient(config ClientConfig, ticket Ticket) *Client {
 	client := &Client{
 		config: config,
+		ticket: ticket,
 	}
 	client.handleSignals()
 	return client
@@ -111,4 +113,12 @@ func (c *Client) StartClientLoop() {
 
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
+}
+
+func (c *Client) sendBetToServer() {
+	c.createClientSocket()
+	// Send ticket to the server
+	sendTicket(c.conn, c.ticket)
+	c.conn.Close()
+
 }

@@ -90,6 +90,19 @@ func PrintConfig(v *viper.Viper) {
 	)
 }
 
+// prepareBetTicket Prepare a ticket to be sent to the server
+fun prepareBetTicket(id string) common.Ticket {
+	ticket := common.Ticket{
+		Agency:   int(id),
+		Name: os.Getenv("NAME"),
+		Lastname: os.Getenv("LASTNAME"),
+		Document: os.Getenv("DOCUMENT"),
+		Birthday: os.Getenv("BIRTHDAY"),
+		Number: int(v.GetInt("number")),
+	}
+	return ticket
+}
+
 func main() {
 	v, err := InitConfig()
 	if err != nil {
@@ -109,7 +122,7 @@ func main() {
 		LoopAmount:    v.GetInt("loop.amount"),
 		LoopPeriod:    v.GetDuration("loop.period"),
 	}
-
-	client := common.NewClient(clientConfig)
-	client.StartClientLoop()
+	betTicket := prepareBetTicket(v.GetString("id"))
+	client := common.NewClient(clientConfig, betTicket)
+	client.sendBetToServer()
 }
