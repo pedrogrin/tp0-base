@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net"
 	"time"
+	"os/signal"
 	"os"
 	"syscall"
-	"os/signal"
 
 	"github.com/op/go-logging"
 )
@@ -26,6 +26,7 @@ type ClientConfig struct {
 type Client struct {
 	config ClientConfig
 	conn   net.Conn
+	done  chan struct{}
 }
 
 // NewClient Initializes a new client receiving the configuration
@@ -33,8 +34,32 @@ type Client struct {
 func NewClient(config ClientConfig) *Client {
 	client := &Client{
 		config: config,
+		done:   make(chan struct{}),
 	}
+	client.handleSignals()
 	return client
+}
+
+// handleSignals for SIGTERM and SIGINT with a gracefylly shutdown
+func (c *Client) handleSignals() {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
+
+	go func() {
+		<-sigChan
+		log.Warningf("action: shutdown | client_id: %v | msg: Received termination signal", c.config.ID)
+		c.cleanup()
+		os.Exit(0)
+	}()
+}
+
+// gracefully shutdown for client resources
+func (c *Client) cleanup() {
+	if c.conn != nil {
+		c.conn.Close()
+		log.Infof("action: cleanup | client_id: %v | msg: Connection closed", c.config.ID)
+	}
+	close(c.done)
 }
 
 // CreateClientSocket Initializes client socket. In case of
@@ -57,7 +82,6 @@ func (c *Client) createClientSocket() error {
 func (c *Client) StartClientLoop() {
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
-	go gracefulShutdown()
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
 		// Create the connection the server in every loop iteration. Send an
 		c.createClientSocket()
@@ -90,13 +114,4 @@ func (c *Client) StartClientLoop() {
 
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
-}
-
-func gracefulShutdown(c *Client) {
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	log.Infof("action: shutdown | result: success | client_id: %v", c.config.ID)
-	c.conn.Close()
-	os.Exit(0)
 }
