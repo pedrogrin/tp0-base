@@ -13,7 +13,7 @@ def process_bet(client_socket):
     if bet is None:
         return
     store_bets([bet])
-    logging.info(f"action: apuesta_almacenada | result: success | dni: ${bet.document} | numero: ${bet.number}")
+    logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
     answer_agency(client_socket, bet)
 
     
