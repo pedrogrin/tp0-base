@@ -57,7 +57,7 @@ func (c *Client) handleSignals() {
 func (c *Client) cleanup() {
 	if c.conn != nil {
 		c.conn.Close()
-		log.Infof("action: shutdown | result: succes | client_id: %v | msg: Connection closed", c.config.ID)
+		log.Infof("action: shutdown | result: success | client_id: %v | msg: Connection closed", c.config.ID)
 	}
 	close(c.done)
 }
