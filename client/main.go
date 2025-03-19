@@ -91,14 +91,14 @@ func PrintConfig(v *viper.Viper) {
 }
 
 // prepareBetTicket Prepare a ticket to be sent to the server
-fun prepareBetTicket(id string) common.Ticket {
+func prepareBetTicket(id string) common.Ticket {
 	ticket := common.Ticket{
-		Agency:   int(id),
-		Name: os.Getenv("NAME"),
-		Lastname: os.Getenv("LASTNAME"),
-		Document: os.Getenv("DOCUMENT"),
-		Birthday: os.Getenv("BIRTHDAY"),
-		Number: int(v.GetInt("number")),
+		Agency:   id,
+		Name: os.Getenv("NOMBRE"),
+		Lastname: os.Getenv("APELLIDO"),
+		Document: os.Getenv("DOCUMENTO"),
+		Birthday: os.Getenv("NACIMIENTO"),
+		Number: os.Getenv("NUMERO"),
 	}
 	return ticket
 }
@@ -124,5 +124,5 @@ func main() {
 	}
 	betTicket := prepareBetTicket(v.GetString("id"))
 	client := common.NewClient(clientConfig, betTicket)
-	client.sendBetToServer()
+	client.SendBetToServer()
 }

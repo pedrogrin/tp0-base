@@ -115,10 +115,10 @@ func (c *Client) StartClientLoop() {
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }
 
-func (c *Client) sendBetToServer() {
+func (c *Client) SendBetToServer() {
 	c.createClientSocket()
 	// Send ticket to the server
-	sendTicket(c.conn, c.ticket)
+	SendTicket(c.conn, c.ticket, 8196, log, c.config.ID)
 	c.conn.Close()
 
 }

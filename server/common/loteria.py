@@ -1,4 +1,4 @@
-import utils
+from common.utils import store_bets, Bet
 import logging
 
 def process_bet(client_socket):
@@ -12,7 +12,7 @@ def process_bet(client_socket):
     bet = parse_bet(bet_msg)
     if bet is None:
         return
-    utils.store_bet([bet])
+    store_bets([bet])
     logging.info(f"action: apuesta_almacenada | result: success | dni: ${bet.document} | numero: ${bet.number}")
     answer_agency(client_socket, bet)
 
@@ -42,7 +42,7 @@ def parse_bet(bet_msg):
         logging.info(f"action: parse_bet | result: fail | msg: {bet_msg}")
         return None
     
-    return utils.Bet(bet_data[1], bet_data[2], bet_data[3], bet_data[4], bet_data[5], bet_data[6])
+    return Bet(bet_data[1], bet_data[2], bet_data[3], bet_data[4], bet_data[5], bet_data[6])
 
 def answer_agency(client_socket, bet):
     """
