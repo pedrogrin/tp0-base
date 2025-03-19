@@ -69,7 +69,6 @@ def generate_network_lines():
     return [
         "networks:",
         "  testing_net:",
-        "    name: testing_net",
         "    ipam:",
         "      driver: default",
         ""
