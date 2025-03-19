@@ -47,7 +47,7 @@ func (c *Client) handleSignals() {
 
 	go func() {
 		<-sigChan
-		log.Warningf("action: shutdown | client_id: %v | msg: Received termination signal", c.config.ID)
+		log.Infof("action: shutdown | result: success | client_id: %v | msg: Received termination signal", c.config.ID)
 		c.cleanup()
 		os.Exit(0)
 	}()
@@ -57,7 +57,7 @@ func (c *Client) handleSignals() {
 func (c *Client) cleanup() {
 	if c.conn != nil {
 		c.conn.Close()
-		log.Infof("action: cleanup | client_id: %v | msg: Connection closed", c.config.ID)
+		log.Infof("action: shutdown | result: succes | client_id: %v | msg: Connection closed", c.config.ID)
 	}
 	close(c.done)
 }
