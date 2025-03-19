@@ -26,7 +26,6 @@ type ClientConfig struct {
 type Client struct {
 	config ClientConfig
 	conn   net.Conn
-	done  chan struct{}
 }
 
 // NewClient Initializes a new client receiving the configuration
@@ -34,7 +33,6 @@ type Client struct {
 func NewClient(config ClientConfig) *Client {
 	client := &Client{
 		config: config,
-		done:   make(chan struct{}),
 	}
 	client.handleSignals()
 	return client
@@ -59,7 +57,6 @@ func (c *Client) cleanup() {
 		c.conn.Close()
 		log.Infof("action: shutdown | result: success | client_id: %v | msg: Connection closed", c.config.ID)
 	}
-	close(c.done)
 }
 
 // CreateClientSocket Initializes client socket. In case of
