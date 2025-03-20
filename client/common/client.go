@@ -20,21 +20,22 @@ type ClientConfig struct {
 	ServerAddress string
 	LoopAmount    int
 	LoopPeriod    time.Duration
+	BatchAmount   int
 }
 
 // Client Entity that encapsulates how
 type Client struct {
 	config ClientConfig
 	conn   net.Conn
-	ticket Ticket
+	tickets []Ticket
 }
 
 // NewClient Initializes a new client receiving the configuration
 // as a parameter
-func NewClient(config ClientConfig, ticket Ticket) *Client {
+func NewClient(config ClientConfig, tickets []Ticket) *Client {
 	client := &Client{
 		config: config,
-		ticket: ticket,
+		tickets: tickets,
 	}
 	client.handleSignals()
 	return client
@@ -115,10 +116,26 @@ func (c *Client) StartClientLoop() {
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }
 
-func (c *Client) SendBetToServer() {
-	c.createClientSocket()
-	// Send ticket to the server
-	SendTicket(c.conn, c.ticket, 8196, log, c.config.ID)
-	c.conn.Close()
 
+func (c *Client) SendAllBetsToServer() {
+	batches := c.splitTicketsBatches()
+	for _, batch := range batches {
+		c.createClientSocket()
+		SendBatchTickets(c.conn, batch, 8196, log, c.config.ID)
+		c.conn.Close()
+	}
+	
+}
+
+func (c *Client) splitTicketsBatches() [][]Ticket {
+	var batches [][]Ticket
+
+	for i := 0; i < len(c.tickets); i += c.config.BatchAmount {
+		end := i + c.config.BatchAmount
+		if end > len(c.tickets) {
+			end = len(c.tickets)
+		}
+		batches = append(batches, c.tickets[i:end])
+	}
+	return batches
 }

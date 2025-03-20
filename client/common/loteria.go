@@ -53,3 +53,40 @@ func validateAnswer(msg string, ticket Ticket, log *logging.Logger) {
 		log.Errorf("action: apuesta_enviada | result: fail | dni: %v | numero: %v", ticket.Document, ticket.Number)
 	}
 }
+
+func SendBatchTickets(conn net.Conn, tickets []Ticket, maxLen int, log *logging.Logger, clientID string) {
+	// Send all tickets in the batch
+	batch_msg := ""
+	len_tickets := len(tickets)
+	for _, ticket := range tickets {
+		batch_msg += fmt.Sprintf("TICKET,%s,%s,%s,%s,%s,%s\n", ticket.Agency, ticket.Name, ticket.Lastname, ticket.Document, ticket.Birthday, ticket.Number)
+	}
+	batch_msg += "BATCH_DONE"
+
+	if len(batch_msg) > maxLen {
+		log.Errorf("action: send_batch | result: failed | client_id: %v | msg: Ticket too long", clientID)
+		return
+	}
+	
+	data := []byte(batch_msg)
+	totalSent := 0
+	for totalSent < len(data) {
+		n, err := conn.Write(data[totalSent:])
+		if err != nil {
+			log.Errorf("action: send_batch | result: failed | error: %v", err)
+			return
+		}
+		totalSent += n
+	}
+	log.Infof("action: send_batch | result: success | client_id: %v | msg: Ticket sent", clientID)
+	msg, err := bufio.NewReader(conn).ReadString('\n')
+	if msg == "" || err != nil {
+		log.Errorf("action: send_batch | result: ERROR | msg: %v | error: %v", msg, err)
+		return
+	}
+	if msg == fmt.Sprintf("recieved: %s-%d\n", tickets[0].Agency, len_tickets) {
+		log.Infof("action: batch_enviado | result: success")
+	} else {
+		log.Errorf("action: batch_enviado | result: fail")
+	}
+}

@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"bufio"
 
 	"github.com/op/go-logging"
 	"github.com/pkg/errors"
@@ -37,6 +38,7 @@ func InitConfig() (*viper.Viper, error) {
 	v.BindEnv("loop", "period")
 	v.BindEnv("loop", "amount")
 	v.BindEnv("log", "level")
+	v.BindEnv("batch", "amount")
 
 	// Try to read configuration from config file. If config file
 	// does not exists then ReadInConfig will fail but configuration
@@ -81,12 +83,13 @@ func InitLogger(logLevel string) error {
 // PrintConfig Print all the configuration parameters of the program.
 // For debugging purposes only
 func PrintConfig(v *viper.Viper) {
-	log.Infof("action: config | result: success | client_id: %s | server_address: %s | loop_amount: %v | loop_period: %v | log_level: %s",
+	log.Infof("action: config | result: success | client_id: %s | server_address: %s | loop_amount: %v | loop_period: %v | log_level: %s | batch_amout: %v",
 		v.GetString("id"),
 		v.GetString("server.address"),
 		v.GetInt("loop.amount"),
 		v.GetDuration("loop.period"),
 		v.GetString("log.level"),
+		v.GetInt("batch.amount"),
 	)
 }
 
@@ -101,6 +104,42 @@ func prepareBetTicket(id string) common.Ticket {
 		Number: os.Getenv("NUMERO"),
 	}
 	return ticket
+}
+
+func readAllBetsFromFrile(id string) []common.Ticket {
+	var tickets []common.Ticket
+	filename := fmt.Sprintf("agency-%s.csv", id)
+	file, err := os.Open(filename)
+	if err != nil {
+		log.Errorf("Could not open file %s", filename)
+		return tickets
+	}
+	defer file.Close()
+	
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		fields := strings.Split(line, ",")
+		if len(fields) != 5 {
+			log.Errorf("Invalid line in file %s: %s", filename, line)
+			continue
+		}
+		ticket := common.Ticket{
+			Agency:   id,
+			Name: fields[0],
+			Lastname: fields[1],
+			Document: fields[2],
+			Birthday: fields[3],
+			Number: fields[4],
+		}
+		tickets = append(tickets, ticket)
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Errorf("Error reading file %s: %s", filename, err)
+	}
+	return tickets
+	
 }
 
 func main() {
@@ -121,8 +160,9 @@ func main() {
 		ID:            v.GetString("id"),
 		LoopAmount:    v.GetInt("loop.amount"),
 		LoopPeriod:    v.GetDuration("loop.period"),
+		BatchAmount:   v.GetInt("batch.amount"),
 	}
-	betTicket := prepareBetTicket(v.GetString("id"))
-	client := common.NewClient(clientConfig, betTicket)
-	client.SendBetToServer()
+	tickets := readAllBetsFromFrile(v.GetString("id"))
+	client := common.NewClient(clientConfig, tickets)
+	client.SendAllBetsToServer()
 }
