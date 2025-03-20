@@ -64,7 +64,7 @@ def generate_client_lines(clients_size):
             "      - testing_net",
             "    volumes:",
             "      - ./client/config.yaml:/config.yaml",
-            f"      - ./data/agency-{i + 1}.csv:/agency-{i + 1}.csv",
+            f"      - ./.data/agency-{i + 1}.csv:/agency-{i + 1}.csv",
             "    depends_on:",
             "      - server",
             ""
