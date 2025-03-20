@@ -6,7 +6,7 @@ def main(args):
         return
     
     compose_file_lines = ["name: tp0", "services:"]
-    compose_file_lines += generate_server_lines()
+    compose_file_lines += generate_server_lines(clients_size)
     compose_file_lines += generate_client_lines(clients_size)
     compose_file_lines += generate_network_lines()
 
@@ -30,7 +30,7 @@ def validate_args(args):
 
     return name, clients
 
-def generate_server_lines():
+def generate_server_lines(clients_size):
     return [
         "  server:",
         "    container_name: server",
@@ -38,6 +38,7 @@ def generate_server_lines():
         "    entrypoint: python3 /main.py",
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
+        f"      - AGENCY_AMOUNT={clients_size}",
         "    networks:",
         "      - testing_net",
         "    volumes:",
