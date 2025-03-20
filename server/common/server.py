@@ -1,7 +1,7 @@
 import socket
 import logging
 import signal
-from common.loteria import process_bet
+from common.loteria import process_batch_bets
 
 class Server:
     def __init__(self, port, listen_backlog):
@@ -51,7 +51,7 @@ class Server:
         client socket will also be closed
         """
         try:
-            process_bet(client_sock)
+            process_batch_bets(client_sock)
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:

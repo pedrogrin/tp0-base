@@ -14,7 +14,40 @@ def process_bet(client_socket):
         return
     store_bets([bet])
     logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
-    answer_agency(client_socket, bet)
+    answer_msg = f"recieved: {bet.agency}-{bet.document}-{bet.number}\n"
+    answer_agency(client_socket, answer_msg)
+
+def process_batch_bets(client_socket):
+    """
+    Process a batch of bets from a client.
+    """
+    bet_msg = read_all_bet_msg(client_socket)
+    bets, bets_amount = parse_bets(bet_msg)
+    if bets is None:
+        logging.info(f"action: apuesta_recibida | result: fail | cantidad: {bets_amount}")
+        return
+    store_bets(bets)
+    logging.info(f"action: apuesta_recibida | result: success | cantidad: {bets_amount}")
+    answer_msg = f"recieved: {bets[0].agency}-{bets_amount}\n"
+    answer_agency(client_socket, answer_msg)
+
+
+def parse_bets(bets_msg):
+    """
+    Parse the batch of bets message
+    Expected format: TICKET,agency,firstname,lastname,document,birthdate_number;
+    """
+    bets = []
+    parsed_bets = bets_msg.rstrip(';')
+    bets_amount = len(parsed_bets)
+    for bet_msg in parsed_bets:
+        bet = parse_bet(bet_msg)
+        if bet is not None:
+            bets.append(bet)
+        else:
+            return None, bets_amount
+
+    return bets, bets_amount
 
     
 def read_all_bet_msg(client_socket, buffer_size=1024):
@@ -44,9 +77,9 @@ def parse_bet(bet_msg):
     
     return Bet(bet_data[1], bet_data[2], bet_data[3], bet_data[4], bet_data[5], bet_data[6])
 
-def answer_agency(client_socket, bet):
+def answer_agency(client_socket, answer_msg):
     """
     Answer the agency with the result of the bet
     """
-    data_bytes = f"recieved: {bet.agency}-{bet.document}-{bet.number}\n".encode('utf-8')
+    data_bytes = answer_msg.encode('utf-8')
     client_socket.sendall(data_bytes)
