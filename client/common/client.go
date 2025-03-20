@@ -118,6 +118,10 @@ func (c *Client) StartClientLoop() {
 
 
 func (c *Client) SendAllBetsToServer() {
+	if c.config.BatchAmount == 0 {
+		log.Criticalf("action: send_tickets | result: fail | error: BatchAmount is 0")
+		return
+	}
 	batches := c.splitTicketsBatches()
 	for _, batch := range batches {
 		c.createClientSocket()

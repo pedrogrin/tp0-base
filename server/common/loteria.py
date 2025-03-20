@@ -39,9 +39,11 @@ def parse_bets(bets_msg):
     """
     bets = []
     parsed_bets = bets_msg.split('\n')
-    bets_amount = len(parsed_bets)
-    for bet_msg in parsed_bets:
-        bet = parse_bet(bet_msg)
+    bets_amount = len(parsed_bets) - 1
+    for parsed_bet in parsed_bets:
+        if parsed_bet == 'BATCH_DONE':
+            break
+        bet = parse_bet(parsed_bet)
         if bet is not None:
             bets.append(bet)
         else:
@@ -67,7 +69,7 @@ def read_all_bet_msg(client_socket, buffer_size=1024):
 def parse_bet(bet_msg):
     """
     Parse the bet message
-    Expected format: TICKET,agency,firstname,lastname,document,birthdate_number
+    Expected format: TICKET,agency,firstname,lastname,document,birthdate,number
     """
     bet_data = bet_msg.split(',')
 
