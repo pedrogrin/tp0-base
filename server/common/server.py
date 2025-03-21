@@ -4,12 +4,14 @@ import signal
 from common.loteria import process_batch_bets
 
 class Server:
-    def __init__(self, port, listen_backlog):
+    def __init__(self, port, listen_backlog, clients_size):
         # Initialize server socket
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
         self.active_sockets_clients = []
+        self.clients_size = clients_size
+        self.clients_done = set()
 
         signal.signal(signal.SIGTERM, self._signal_handler)
 
