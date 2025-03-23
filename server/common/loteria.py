@@ -11,7 +11,7 @@ def process_batch_bets(bet_msg):
         return
     store_bets(bets)
     logging.info(f"action: apuesta_recibida | result: success | cantidad: {bets_amount}")
-    answer_msg = f"recieved: {bets[0].agency}-{bets_amount}\n"
+    answer_msg = f"recieved: {bets[0].agency}-{bets_amount}"
     return answer_msg
 
 def parse_bets(bets_msg):

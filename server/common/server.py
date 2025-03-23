@@ -62,7 +62,7 @@ class Server:
                 self.__answer_socket(client_sock, answer_msg)
                 self.__delete_socket_from_active(client_sock)
         except Exception as e:
-            logging.error("action: receive_message | result: fail | error: {e}")
+            logging.error(f"action: receive_message | result: fail | error: {e}")
             client_sock.close()
 
     def __accept_new_connection(self):
@@ -99,6 +99,7 @@ class Server:
         """
         Answer the socket with the result of the bet
         """
+        answer_msg += "\n"
         data_bytes = answer_msg.encode('utf-8')
         client_socket.sendall(data_bytes)
 
