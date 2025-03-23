@@ -125,10 +125,12 @@ func (c *Client) SendAllBetsToServer() {
 	batches := c.splitTicketsBatches()
 	for _, batch := range batches {
 		c.createClientSocket()
+		time.Sleep(c.config.LoopPeriod)
 		SendBatchTickets(c.conn, batch, 8196, log, c.config.ID)
 		c.conn.Close()
 	}
 	c.createClientSocket()
+	time.Sleep(c.config.LoopPeriod)
 	CheckWinnersWithServer(c.conn, log, c.config.ID)
 	c.conn.Close()
 	
