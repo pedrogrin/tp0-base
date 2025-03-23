@@ -1,0 +1,3 @@
+### Resolucion ejercicio 6:
+Para este ejercicio mantuve de igual manera la forma de enviar un Ticket, pero ahora en vez de cortar en un \n se corta cuando el servidor recibe un mensaje con BATCH_DONE.
+De esta forma un cliente envia por ejemplo TICKET,agency,firstname,lastname,document,birthdate_number\nTICKET,agency,firstname,lastname,document,birthdate_number\nBATCH_DONE. Asi el servidor empezara separando por los \n, por lo que nos quedaran dos tickets y BATCH_DONE. Como encontro un BATCH_DONE termina de leer, y luego para construir un Ticket verifica si contiene todos los campos necesarios y si no contiene BATCH_DONE.
