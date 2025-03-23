@@ -5,6 +5,7 @@ import (
 	"net"
 	"github.com/op/go-logging"
 	"bufio"
+	"strings"
 )
 
 
@@ -89,4 +90,28 @@ func SendBatchTickets(conn net.Conn, tickets []Ticket, maxLen int, log *logging.
 	} else {
 		log.Errorf("action: batch_enviado | result: fail")
 	}
+}
+
+func CheckWinnersWithServer(conn net.Conn, log *logging logger, clientID string) {
+	// Check the winners with the server
+	msg := fmt.Sprintf("ALL_BETS_DONE\n", clientID)
+	data := []byte(msg)
+	totalSent := 0
+	for totalSent < len(data) {
+		n, err := conn.Write(data[totalSent:])
+		if err != nil {
+			log.Errorf("action: check_winners | result: failed | error: %v", err)
+			return
+		}
+		totalSent += n
+	}
+	log.Infof("action: check_winners | result: success | client_id: %v | msg: Winners checked", clientID)
+	msg, err := bufio.NewReader(conn).ReadString('\n')
+	if msg == "" || err != nil {
+		log.Errorf("action: check_winners | result: ERROR | msg: %v | error: %v", msg, err)
+		return
+	}
+	parsed_msg := strings.Split(msg, ",")
+	winners_size := len(parsed_msg) - 1
+	log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %v", winners_size)
 }

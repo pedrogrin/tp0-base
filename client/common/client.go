@@ -128,6 +128,9 @@ func (c *Client) SendAllBetsToServer() {
 		SendBatchTickets(c.conn, batch, 8196, log, c.config.ID)
 		c.conn.Close()
 	}
+	c.createClientSocket()
+	CheckWinnersWithServer(c.conn, log, c.config.ID)
+	c.conn.Close()
 	
 }
 
