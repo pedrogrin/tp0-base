@@ -1,0 +1,4 @@
+### Resolucion ejercicio 8:
+Para este ejercicio introduje el modulo multiprocessing en python ya que es recomendado en python porque el global interpreter lock en python no permite que varios threads se ejecuten en paralelo. En cambio utilizando procesos diferentes, estos no comparten memoria y tampoco el global interpreter lock, por lo que si podemos tener paralelismo de verdad.
+Para esto tuve que utilizar la clase Manager y asi poder compartir recursos entre diferentes procesos.
+A su vez, tuve que pasar varios metodos a estaticos y agregar argumentos a esas funciones ya que utilizando self algunas cosas no se podrian serializar facilmente para pasarle del proceso padre a un proceso hijo.
