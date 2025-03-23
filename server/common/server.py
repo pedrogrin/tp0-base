@@ -113,6 +113,7 @@ class Server:
             winners = check_winners()
             for agency, winners in winners.items():
                 if agency in self.clients_done:
+                    logging.info(f"action: sorteo | result: success | agency: {agency} | winners: {winners}")
                     self.__answer_socket(self.clients_done[agency], winners)
                     self.__delete_socket_from_active(self.clients_done[agency])
             self.clients_done = {}
