@@ -90,7 +90,7 @@ class Server:
             if not chunk:
                 break
             data_bytes += chunk
-            if b'BATCH_DONE' in chunk:
+            if b'BATCH_DONE' in chunk or b'ALL_BETS_DONE' in chunk:
                 break
         return data_bytes.rstrip().decode('utf-8')
     
