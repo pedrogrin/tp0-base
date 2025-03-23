@@ -2,6 +2,7 @@ import socket
 import logging
 import signal
 from common.loteria import process_batch_bets, check_winners
+import multiprocessing
 
 class Server:
     def __init__(self, port, listen_backlog, clients_size):
@@ -9,9 +10,12 @@ class Server:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
-        self.active_sockets_clients = []
+
+        self.manager = multiprocessing.Manager()
+        self.active_sockets_clients = self.manager.list()
         self.clients_size = clients_size
-        self.clients_done = {}
+        self.clients_done = self.manager.dict()
+        self.running = multiprocessing.Value('b', True)
 
         signal.signal(signal.SIGTERM, self._signal_handler)
 
@@ -40,12 +44,17 @@ class Server:
 
         # TODO: Modify this program to handle signal to graceful shutdown
         # the server
-        while True:
+        while self.running.value:
             client_sock = self.__accept_new_connection()
             self.active_sockets_clients.append(client_sock)
-            self.__handle_client_connection(client_sock)
+            client_process = multiprocessing.Process(
+                    target=self.__handle_client_connection,
+                    args=(client_sock, self.active_sockets_clients, self.clients_done, self.clients_size)
+                )
+            client_process.start()
 
-    def __handle_client_connection(self, client_sock):
+    @staticmethod
+    def __handle_client_connection(client_sock, active_sockets_clients, clients_done, clients_size):
         """
         Read message from a specific client socket and closes the socket
 
@@ -53,17 +62,17 @@ class Server:
         client socket will also be closed
         """
         try:
-            msg = self.__read_all_bet_msg(client_sock)
+            msg = Server.__read_all_bet_msg(client_sock)
             if 'ALL_BETS_DONE' in msg:
-                self.__add_agency_done(msg, client_sock)
-                self.__check_all_agencies_done()
+                Server.__add_agency_done(msg, client_sock, clients_done)
+                Server.__check_all_agencies_done(clients_done, active_sockets_clients, clients_size)
             else:
                 answer_msg = process_batch_bets(msg)
-                self.__answer_socket(client_sock, answer_msg)
-                self.__delete_socket_from_active(client_sock)
+                Server.__answer_socket(client_sock, answer_msg)
         except Exception as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
-            client_sock.close()
+        finally:
+            Server.__delete_socket_from_active(client_sock, active_sockets_clients)
 
     def __accept_new_connection(self):
         """
@@ -103,25 +112,31 @@ class Server:
         data_bytes = answer_msg.encode('utf-8')
         client_socket.sendall(data_bytes)
 
-    def __add_agency_done(self, msg, client_socket):
+    @staticmethod
+    def __add_agency_done(msg, client_socket, clients_done):
         """Parse msg of type AGENCY_DONE,agency"""
         agency = msg.split(',')[1]
-        self.clients_done[agency] = client_socket
+        clients_done[agency] = client_socket
     
-    def __check_all_agencies_done(self):
-        if len(self.clients_done) == self.clients_size:
+    @staticmethod
+    def __check_all_agencies_done(clients_done, active_sockets_clients, clients_size):
+        if len(clients_done) == clients_size:
             logging.info("action: sorteo | result: success")
             winners = check_winners()
             for agency, winners in winners.items():
-                if agency in self.clients_done:
+                if agency in clients_done:
                     logging.info(f"action: sorteo | result: success | agency: {agency} | winners: {winners}")
-                    self.__answer_socket(self.clients_done[agency], winners)
-                    self.__delete_socket_from_active(self.clients_done[agency])
-            self.clients_done = {}
+                    Server.__answer_socket(clients_done[agency], winners)
+                    Server.__delete_socket_from_active(clients_done[agency], active_sockets_clients)
+            clients_done.clear()
             
 
-    def __delete_socket_from_active(self, client_socket):
+    @staticmethod
+    def __delete_socket_from_active(client_socket, active_sockets_clients):
         """Delete client socket from active_sockets_clients"""
-        client_socket.close()
-        if client_socket in self.active_sockets_clients:
-            self.active_sockets_clients.remove(client_socket)
+        if client_socket in active_sockets_clients:
+            active_sockets_clients.remove(client_socket)
+        try:
+            client_socket.close()
+        except Exception as e:
+            logging.warning(f"action: close_socket | result: fail | error: {e}")
