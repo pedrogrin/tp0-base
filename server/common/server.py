@@ -11,7 +11,7 @@ class Server:
         self._server_socket.listen(listen_backlog)
         self.active_sockets_clients = []
         self.clients_size = clients_size
-        self.clients_done = set()
+        self.clients_done = {}
 
         signal.signal(signal.SIGTERM, self._signal_handler)
 

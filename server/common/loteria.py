@@ -17,11 +17,10 @@ def process_bet(client_socket):
     answer_msg = f"recieved: {bet.agency}-{bet.document}-{bet.number}\n"
     answer_agency(client_socket, answer_msg)
 
-def process_batch_bets(client_socket):
+def process_batch_bets(client_socket, bet_msg):
     """
     Process a batch of bets from a client.
     """
-    bet_msg = read_all_bet_msg(client_socket)
     bets, bets_amount = parse_bets(bet_msg)
     if bets is None:
         logging.info(f"action: apuesta_recibida | result: fail | cantidad: {bets_amount}")
@@ -65,6 +64,17 @@ def read_all_bet_msg(client_socket, buffer_size=1024):
         if b'BATCH_DONE' in chunk:
             break
     return data_bytes.rstrip().decode('utf-8')
+
+def process_agency_msg(client_socket):
+    """
+    Check type of message to process the agency request
+    """
+    msg = read_all_bet_msg(client_socket)
+    logging.info(f"action: receive_message | result: success | msg: {msg}")
+    if 'ALL_BETS_DONE' in msg:
+        return
+    else:
+        process_batch_bets(client_socket, msg)
 
 def parse_bet(bet_msg):
     """
