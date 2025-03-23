@@ -94,7 +94,7 @@ func SendBatchTickets(conn net.Conn, tickets []Ticket, maxLen int, log *logging.
 
 func CheckWinnersWithServer(conn net.Conn, log *logging.Logger, clientID string) {
 	// Check the winners with the server
-	msg := fmt.Sprintf("ALL_BETS_DONE\n", clientID)
+	msg := fmt.Sprintf("ALL_BETS_DONE,%s\n", clientID)
 	data := []byte(msg)
 	totalSent := 0
 	for totalSent < len(data) {
