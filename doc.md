@@ -1,0 +1,3 @@
+### Resolucion ejercicio 7:
+Para este ejercicio agregue que un cliente envie un ALL_BETS_DONE,agency una vez que envia todas sus apuestas y quiere conocer a los ganadores de su agencia. Para esto el servidor necesita guardarse un diccionario de agencia y socket asi luego puede contestar con los ganadores unicamente a la agencia que corresponda.
+Ademas, para este ejercicio como el servidor debe inicialmente chequear el mensaje para ver si la agencia esta enviando tickets o si quiere conocer los ganadores, decidi que era mejor que el modulo de server.py se encargue de manipular los sockets (tanto para lectura como escritura). Por este motivo quite del modulo loteria las funciones que manipulaban los sockets y las movi al modulo server.
