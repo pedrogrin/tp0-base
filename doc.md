@@ -1,0 +1,4 @@
+### Resolucion ejercicio 3:
+Para este ejercicio realice un simple script en donde se corria una imagen de docker que contenia netcat ya instalado, por lo que no se debia instalar en la maquina de host para que funcione.
+Inicialmente el nombre del servidor y del puerto no estaban simplemente hardcodeados en el codigo, sino que iba a buscarlo al archivo de configuracion del servidor. El problema fue que los tests en ese momento me fallaban y estuve un buen rato intentando descifrar que era lo que sucedia.
+Finalmente me di cuenta que estaba definiendole un nombre incorrecto a la network en el docker compose, y que este era el problema por lo que mis tests no funcionaban.
