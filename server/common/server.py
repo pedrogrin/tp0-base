@@ -1,7 +1,7 @@
 import socket
 import logging
 import signal
-from common.loteria import process_batch_bets
+from common.loteria import process_batch_bets, check_winners
 
 class Server:
     def __init__(self, port, listen_backlog, clients_size):
@@ -23,8 +23,8 @@ class Server:
         self._server_socket.close()
         logging.info("action: close server socket | result: success | server: closed")
 
-        for client in self.active_sockets_clients:
-            client.close()
+        for client_socket in self.active_sockets_clients:
+            self.__delete_socket_from_active(client_socket)
             logging.info("action: close client socket | result: success | client: closed")
 
         exit(0)
@@ -53,10 +53,16 @@ class Server:
         client socket will also be closed
         """
         try:
-            process_batch_bets(client_sock)
-        except OSError as e:
+            msg = self.__read_all_bet_msg(client_sock)
+            if 'ALL_BETS_DONE' in msg:
+                self.__add_agency_done(msg, client_sock)
+                self.__check_all_agencies_done()
+            else:
+                answer_msg = process_batch_bets(msg)
+                self.__answer_socket(client_sock, answer_msg)
+                self.__delete_socket_from_active(client_sock)
+        except Exception as e:
             logging.error("action: receive_message | result: fail | error: {e}")
-        finally:
             client_sock.close()
 
     def __accept_new_connection(self):
@@ -72,3 +78,47 @@ class Server:
         c, addr = self._server_socket.accept()
         logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
         return c
+    
+    @staticmethod
+    def __read_all_bet_msg(client_socket, buffer_size=1024):
+        """
+        Read all the message from the client socket
+        """
+        data_bytes = b''
+        while True:
+            chunk = client_socket.recv(buffer_size)
+            if not chunk:
+                break
+            data_bytes += chunk
+            if b'BATCH_DONE' in chunk:
+                break
+        return data_bytes.rstrip().decode('utf-8')
+    
+    @staticmethod
+    def __answer_socket(client_socket, answer_msg):
+        """
+        Answer the socket with the result of the bet
+        """
+        data_bytes = answer_msg.encode('utf-8')
+        client_socket.sendall(data_bytes)
+
+    def __add_agency_done(self, msg, client_socket):
+        """Parse msg of type AGENCY_DONE,agency"""
+        agency = msg.split(',')[1]
+        self.clients_done[agency] = client_socket
+    
+    def __check_all_agencies_done(self):
+        if len(self.clients_done) == self.clients_size:
+            winners = check_winners()
+            for agency, winners in winners.items():
+                if agency in self.clients_done:
+                    self.__answer_socket(self.clients_done[agency], winners)
+                    self.__delete_socket_from_active(self.clients_done[agency])
+            self.clients_done = {}
+            logging.info("action: sorteo | result: success")
+
+    def __delete_socket_from_active(self, client_socket):
+        """Delete client socket from active_sockets_clients"""
+        client_socket.close()
+        if client_socket in self.active_sockets_clients:
+            self.active_sockets_clients.remove(client_socket)

@@ -1,23 +1,7 @@
-from common.utils import store_bets, Bet
+from common.utils import store_bets, Bet, load_bets, has_won
 import logging
 
-def process_bet(client_socket):
-    """
-    Process a bet from a client.
-    """
-    # Receive the bet from the client
-    bet_msg = read_all_bet_msg(client_socket)
-    addr = client_socket.getpeername()
-    logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {bet_msg}')
-    bet = parse_bet(bet_msg)
-    if bet is None:
-        return
-    store_bets([bet])
-    logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
-    answer_msg = f"recieved: {bet.agency}-{bet.document}-{bet.number}\n"
-    answer_agency(client_socket, answer_msg)
-
-def process_batch_bets(client_socket, bet_msg):
+def process_batch_bets(bet_msg):
     """
     Process a batch of bets from a client.
     """
@@ -28,8 +12,7 @@ def process_batch_bets(client_socket, bet_msg):
     store_bets(bets)
     logging.info(f"action: apuesta_recibida | result: success | cantidad: {bets_amount}")
     answer_msg = f"recieved: {bets[0].agency}-{bets_amount}\n"
-    answer_agency(client_socket, answer_msg)
-
+    return answer_msg
 
 def parse_bets(bets_msg):
     """
@@ -50,48 +33,28 @@ def parse_bets(bets_msg):
 
     return bets, bets_amount
 
-    
-def read_all_bet_msg(client_socket, buffer_size=1024):
-    """
-    Read all the message from the client socket
-    """
-    data_bytes = b''
-    while True:
-        chunk = client_socket.recv(buffer_size)
-        if not chunk:
-            break
-        data_bytes += chunk
-        if b'BATCH_DONE' in chunk:
-            break
-    return data_bytes.rstrip().decode('utf-8')
-
-def process_agency_msg(client_socket):
-    """
-    Check type of message to process the agency request
-    """
-    msg = read_all_bet_msg(client_socket)
-    logging.info(f"action: receive_message | result: success | msg: {msg}")
-    if 'ALL_BETS_DONE' in msg:
-        return
-    else:
-        process_batch_bets(client_socket, msg)
-
 def parse_bet(bet_msg):
     """
     Parse the bet message
     Expected format: TICKET,agency,firstname,lastname,document,birthdate,number
     """
     bet_data = bet_msg.split(',')
-
     if len(bet_data) != 7 or bet_data[0] != 'TICKET':
         logging.info(f"action: parse_bet | result: fail | msg: {bet_msg}")
         return None
-    
     return Bet(bet_data[1], bet_data[2], bet_data[3], bet_data[4], bet_data[5], bet_data[6])
 
-def answer_agency(client_socket, answer_msg):
+def check_winners():
     """
-    Answer the agency with the result of the bet
+    Check if there are winners in the lottery.
     """
-    data_bytes = answer_msg.encode('utf-8')
-    client_socket.sendall(data_bytes)
+    winners = {}
+    for bet in load_bets():
+        agency = str(bet.agency)
+        if agency not in winners:
+            winners[agency] = "WINNERS"
+        if has_won(bet):
+            winners[agency] += f",{bet.document}"
+    
+    return winners
+
