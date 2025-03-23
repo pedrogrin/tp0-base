@@ -109,9 +109,8 @@ class Server:
         self.clients_done[agency] = client_socket
     
     def __check_all_agencies_done(self):
-        print(self.clients_done)
-        print(self.clients_size)
         if len(self.clients_done) == self.clients_size:
+            logging.info("action: sorteo | result: success")
             winners = check_winners()
             for agency, winners in winners.items():
                 if agency in self.clients_done:
@@ -119,7 +118,7 @@ class Server:
                     self.__answer_socket(self.clients_done[agency], winners)
                     self.__delete_socket_from_active(self.clients_done[agency])
             self.clients_done = {}
-            logging.info("action: sorteo | result: success")
+            
 
     def __delete_socket_from_active(self, client_socket):
         """Delete client socket from active_sockets_clients"""
