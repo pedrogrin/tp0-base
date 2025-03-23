@@ -109,6 +109,8 @@ class Server:
         self.clients_done[agency] = client_socket
     
     def __check_all_agencies_done(self):
+        print(self.clients_done)
+        print(self.clients_size)
         if len(self.clients_done) == self.clients_size:
             winners = check_winners()
             for agency, winners in winners.items():
