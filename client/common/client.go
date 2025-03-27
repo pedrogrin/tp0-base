@@ -83,6 +83,7 @@ func (c *Client) StartClientLoop() {
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
 		// Intentar crear la conexión al servidor
 		if err := c.createClientSocket(); err != nil {
+			c.cleanup()
 			return // Salir del bucle si no se puede conectar
 		}
 
@@ -95,13 +96,15 @@ func (c *Client) StartClientLoop() {
 		)
 		if err != nil {
 			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v", c.config.ID, err)
-			return // Salir a la siguiente iteración si falla el envío
+			c.cleanup()
+			return // Salir si falla
 		}
 
 		// Leer respuesta del servidor
 		msg, err := bufio.NewReader(c.conn).ReadString('\n')
 
 		if err != nil {
+			c.cleanup()
 			return // Salir si falla la recepción
 		}
 
