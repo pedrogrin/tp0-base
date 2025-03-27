@@ -10,6 +10,7 @@ class Server:
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
         self.active_sockets_clients = []
+        self.running = True
 
         signal.signal(signal.SIGTERM, self._signal_handler)
 
@@ -25,6 +26,8 @@ class Server:
             client.close()
             logging.info("action: close client socket | result: success | client: closed")
 
+        self.running = False
+
 
     def run(self):
         """
@@ -37,8 +40,10 @@ class Server:
 
         # TODO: Modify this program to handle signal to graceful shutdown
         # the server
-        while True:
+        while self.running:
             client_sock = self.__accept_new_connection()
+            if not client_sock:
+                continue
             self.active_sockets_clients.append(client_sock)
             self.__handle_client_connection(client_sock)
 
@@ -71,6 +76,9 @@ class Server:
 
         # Connection arrived
         logging.info('action: accept_connections | result: in_progress')
-        c, addr = self._server_socket.accept()
+        try:
+            c, addr = self._server_socket.accept()
+        except Exception:
+            return None
         logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
         return c
