@@ -31,8 +31,6 @@ class Server:
             self.__delete_socket_from_active(client_socket)
             logging.info("action: close client socket | result: success | client: closed")
 
-        exit(0)
-
     def run(self):
         """
         Dummy Server loop
