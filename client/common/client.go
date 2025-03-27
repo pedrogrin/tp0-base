@@ -55,6 +55,7 @@ func (c *Client) cleanup() {
 	if c.conn != nil {
 		c.conn.Close()
 		log.Infof("action: shutdown | result: success | client_id: %v | msg: Connection closed", c.config.ID)
+		c.conn = nil
 	}
 }
 
@@ -64,11 +65,12 @@ func (c *Client) cleanup() {
 func (c *Client) createClientSocket() error {
 	conn, err := net.Dial("tcp", c.config.ServerAddress)
 	if err != nil {
-		log.Criticalf(
+		log.Errorf(
 			"action: connect | result: fail | client_id: %v | error: %v",
 			c.config.ID,
 			err,
 		)
+		return err
 	}
 	c.conn = conn
 	return nil
@@ -79,35 +81,38 @@ func (c *Client) StartClientLoop() {
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
-		// Create the connection the server in every loop iteration. Send an
-		c.createClientSocket()
+		// Intentar crear la conexión al servidor
+		if err := c.createClientSocket(); err != nil {
+			log.Errorf("action: start_loop | result: fail | client_id: %v | msg: Could not connect to server, shutting down", c.config.ID)
+			c.cleanup()
+			return // Salir del bucle si no se puede conectar
+		}
 
-		// TODO: Modify the send to avoid short-write
-		fmt.Fprintf(
+		// Enviar mensaje al servidor
+		_, err := fmt.Fprintf(
 			c.conn,
 			"[CLIENT %v] Message N°%v\n",
 			c.config.ID,
 			msgID,
 		)
-		msg, err := bufio.NewReader(c.conn).ReadString('\n')
-		c.conn.Close()
-
 		if err != nil {
-			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
-				c.config.ID,
-				err,
-			)
-			return
+			log.Errorf("action: send_message | result: fail | client_id: %v | error: %v", c.config.ID, err)
+			c.cleanup()
+			continue // Saltar a la siguiente iteración si falla el envío
 		}
 
-		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
-			c.config.ID,
-			msg,
-		)
+		// Leer respuesta del servidor
+		msg, err := bufio.NewReader(c.conn).ReadString('\n')
 
-		// Wait a time between sending one message and the next one
+		if err != nil {
+			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v", c.config.ID, err)
+			continue // Continuar si falla la recepción
+		}
+
+		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v", c.config.ID, msg)
+
+		// Esperar antes del próximo mensaje
 		time.Sleep(c.config.LoopPeriod)
-
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }
