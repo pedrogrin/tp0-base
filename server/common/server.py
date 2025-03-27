@@ -25,7 +25,6 @@ class Server:
             client.close()
             logging.info("action: close client socket | result: success | client: closed")
 
-        exit(0)
 
     def run(self):
         """
