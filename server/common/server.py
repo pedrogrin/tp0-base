@@ -13,8 +13,6 @@ class Server:
 
         self.manager = multiprocessing.Manager()
         self.active_sockets_clients = self.manager.list()
-        self.clients_size = clients_size
-        self.clients_done = self.manager.dict()
         self.running = multiprocessing.Value('b', True)
 
         self.barrier = multiprocessing.Barrier(clients_size)
@@ -69,15 +67,12 @@ class Server:
             msg = Server.__read_all_bet_msg(client_sock)
             if 'ALL_BETS_DONE' in msg:
                 agency_process = msg.split(',')[1]
-                #Server.__check_all_agencies_done(clients_done, active_sockets_clients, clients_size)
                 break
             else:
                 answer_msg = process_batch_bets(msg)
                 Server.__answer_socket(client_sock, answer_msg)
         
-        #logging.info(f"action: waiting_at_barrier | agency: {agency_process}")
         barrier.wait()
-        #logging.info(f"action: barrier_passed | agency: {agency_process}")
 
         winners = None
         with lock: 
@@ -130,25 +125,6 @@ class Server:
         answer_msg += "\n"
         data_bytes = answer_msg.encode('utf-8')
         client_socket.sendall(data_bytes)
-
-    @staticmethod
-    def __add_agency_done(msg, client_socket, clients_done):
-        """Parse msg of type AGENCY_DONE,agency"""
-        agency = msg.split(',')[1]
-        clients_done[agency] = client_socket
-    
-    @staticmethod
-    def __check_all_agencies_done(clients_done, active_sockets_clients, clients_size):
-        if len(clients_done) == clients_size:
-            logging.info("action: sorteo | result: success")
-            winners = check_winners()
-            for agency, winners in winners.items():
-                if agency in clients_done:
-                    logging.info(f"action: sorteo | result: success | agency: {agency} | winners: {winners}")
-                    Server.__answer_socket(clients_done[agency], winners)
-                    Server.__delete_socket_from_active(clients_done[agency], active_sockets_clients)
-            clients_done.clear()
-            
 
     @staticmethod
     def __delete_socket_from_active(client_socket, active_sockets_clients):
