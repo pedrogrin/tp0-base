@@ -23,6 +23,7 @@ class Server:
         """
         Signal handler for graceful shutdown
         """
+        self.running.value = False
         logging.info(f"action: signal_handler | result: success | signal: {signum}")
         self._server_socket.close()
         logging.info("action: close server socket | result: success | server: closed")
@@ -44,6 +45,8 @@ class Server:
         # the server
         while self.running.value:
             client_sock = self.__accept_new_connection()
+            if not client_sock:
+                continue
             self.active_sockets_clients.append(client_sock)
             client_process = multiprocessing.Process(
                     target=self.__handle_client_connection,
@@ -82,7 +85,10 @@ class Server:
 
         # Connection arrived
         logging.info('action: accept_connections | result: in_progress')
-        c, addr = self._server_socket.accept()
+        try:
+            c, addr = self._server_socket.accept()
+        except Exception:
+            return None
         logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
         return c
     

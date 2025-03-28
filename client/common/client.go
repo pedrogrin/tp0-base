@@ -59,6 +59,7 @@ func (c *Client) cleanup() {
 	if c.conn != nil {
 		c.conn.Close()
 		log.Infof("action: shutdown | result: success | client_id: %v | msg: Connection closed", c.config.ID)
+		c.conn = nil
 	}
 }
 
@@ -68,11 +69,12 @@ func (c *Client) cleanup() {
 func (c *Client) createClientSocket() error {
 	conn, err := net.Dial("tcp", c.config.ServerAddress)
 	if err != nil {
-		log.Criticalf(
+		log.Errorf(
 			"action: connect | result: fail | client_id: %v | error: %v",
 			c.config.ID,
 			err,
 		)
+		return err
 	}
 	c.conn = conn
 	return nil
@@ -124,13 +126,17 @@ func (c *Client) SendAllBetsToServer() {
 	}
 	batches := c.splitTicketsBatches()
 	for _, batch := range batches {
-		c.createClientSocket()
-		time.Sleep(c.config.LoopPeriod)
+		if err := c.createClientSocket(); err != nil {
+			c.cleanup()
+			return // Salir del bucle si no se puede conectar
+		}
 		SendBatchTickets(c.conn, batch, 8196, log, c.config.ID)
 		c.conn.Close()
 	}
-	c.createClientSocket()
-	time.Sleep(c.config.LoopPeriod)
+	if err := c.createClientSocket(); err != nil {
+		c.cleanup()
+		return
+	}
 	CheckWinnersWithServer(c.conn, log, c.config.ID)
 	c.conn.Close()
 	
