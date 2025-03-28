@@ -47,6 +47,7 @@ func (c *Client) handleSignals() {
 		<-sigChan
 		log.Infof("action: shutdown | result: success | client_id: %v | msg: Received termination signal", c.config.ID)
 		c.cleanup()
+		os.Exit(0)
 	}()
 }
 
