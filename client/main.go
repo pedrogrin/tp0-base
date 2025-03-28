@@ -166,5 +166,4 @@ func main() {
 	client := common.NewClient(clientConfig, tickets)
 	client.SendAllBetsToServer()
 	defer client.Cleanup()
-	time.Sleep(clientConfig.LoopPeriod)
 	}

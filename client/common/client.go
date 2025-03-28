@@ -130,8 +130,8 @@ func (c *Client) SendAllBetsToServer() {
 		return // Salir del bucle si no se puede conectar
 	}
 	for _, batch := range batches {
-		
 		SendBatchTickets(c.conn, batch, 8196, log, c.config.ID)
+		time.Sleep(clientConfig.LoopPeriod)
 	}
 	CheckWinnersWithServer(c.conn, log, c.config.ID)
 	c.conn.Close()
