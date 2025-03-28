@@ -166,5 +166,4 @@ func main() {
 	tickets := readAllBetsFromFrile(v.GetString("id"))
 	client := common.NewClient(clientConfig, tickets)
 	client.SendAllBetsToServer()
-	defer client.Cleanup()
 	}
