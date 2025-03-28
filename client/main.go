@@ -165,5 +165,5 @@ func main() {
 	tickets := readAllBetsFromFrile(v.GetString("id"))
 	client := common.NewClient(clientConfig, tickets)
 	client.SendAllBetsToServer()
-	time.Sleep(clientConfig.LoopPeriod)
+	time.Sleep(5 * time.Second) //final sleep for logs
 	}
