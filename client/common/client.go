@@ -134,6 +134,7 @@ func (c *Client) SendAllBetsToServer() {
 		time.Sleep(clientConfig.LoopPeriod)
 	}
 	CheckWinnersWithServer(c.conn, log, c.config.ID)
+	time.Sleep(clientConfig.LoopPeriod)
 	c.conn.Close()
 	
 }
