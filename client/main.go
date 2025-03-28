@@ -66,7 +66,6 @@ func InitLogger(logLevel string) error {
 	format := logging.MustStringFormatter(
 		`%{time:2006-01-02 15:04:05} %{level:.5s}     %{message}`,
 	)
-	syncBackend := logging.NewSyncBackend(baseBackend)
 	backendFormatter := logging.NewBackendFormatter(baseBackend, format)
 
 	backendLeveled := logging.AddModuleLevel(backendFormatter)
@@ -166,4 +165,5 @@ func main() {
 	tickets := readAllBetsFromFrile(v.GetString("id"))
 	client := common.NewClient(clientConfig, tickets)
 	client.SendAllBetsToServer()
+	time.Sleep(clientConfig.LoopPeriod)
 	}
