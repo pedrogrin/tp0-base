@@ -125,17 +125,13 @@ func (c *Client) SendAllBetsToServer() {
 		return
 	}
 	batches := c.splitTicketsBatches()
-	for _, batch := range batches {
-		if err := c.createClientSocket(); err != nil {
-			c.cleanup()
-			return // Salir del bucle si no se puede conectar
-		}
-		SendBatchTickets(c.conn, batch, 8196, log, c.config.ID)
-		c.conn.Close()
-	}
 	if err := c.createClientSocket(); err != nil {
 		c.cleanup()
-		return
+		return // Salir del bucle si no se puede conectar
+	}
+	for _, batch := range batches {
+		
+		SendBatchTickets(c.conn, batch, 8196, log, c.config.ID)
 	}
 	CheckWinnersWithServer(c.conn, log, c.config.ID)
 	c.conn.Close()

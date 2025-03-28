@@ -62,18 +62,15 @@ class Server:
         If a problem arises in the communication with the client, the
         client socket will also be closed
         """
-        try:
+        while True:
             msg = Server.__read_all_bet_msg(client_sock)
             if 'ALL_BETS_DONE' in msg:
                 Server.__add_agency_done(msg, client_sock, clients_done)
                 Server.__check_all_agencies_done(clients_done, active_sockets_clients, clients_size)
+                break
             else:
                 answer_msg = process_batch_bets(msg)
                 Server.__answer_socket(client_sock, answer_msg)
-        except Exception as e:
-            logging.error(f"action: receive_message | result: fail | error: {e}")
-        finally:
-            Server.__delete_socket_from_active(client_sock, active_sockets_clients)
 
     def __accept_new_connection(self):
         """
