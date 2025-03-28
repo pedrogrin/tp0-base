@@ -75,9 +75,9 @@ class Server:
                 answer_msg = process_batch_bets(msg)
                 Server.__answer_socket(client_sock, answer_msg)
         
-        logging.info(f"action: waiting_at_barrier | agency: {agency_process}")
+        #logging.info(f"action: waiting_at_barrier | agency: {agency_process}")
         barrier.wait()
-        logging.info(f"action: barrier_passed | agency: {agency_process}")
+        #logging.info(f"action: barrier_passed | agency: {agency_process}")
 
         winners = None
         with lock: 
