@@ -17,6 +17,9 @@ class Server:
         self.clients_done = self.manager.dict()
         self.running = multiprocessing.Value('b', True)
 
+        self.barrier = multiprocessing.Barrier(clients_size)
+        self.lock = multiprocessing.Lock()
+
         signal.signal(signal.SIGTERM, self._signal_handler)
 
     def _signal_handler(self, signum, _frame):
@@ -50,12 +53,12 @@ class Server:
             self.active_sockets_clients.append(client_sock)
             client_process = multiprocessing.Process(
                     target=self.__handle_client_connection,
-                    args=(client_sock, self.active_sockets_clients, self.clients_done, self.clients_size)
+                    args=(client_sock, self.barrier, self.lock)
                 )
             client_process.start()
 
     @staticmethod
-    def __handle_client_connection(client_sock, active_sockets_clients, clients_done, clients_size):
+    def __handle_client_connection(client_sock, barrier, lock):
         """
         Read message from a specific client socket and closes the socket
 
@@ -65,12 +68,27 @@ class Server:
         while True:
             msg = Server.__read_all_bet_msg(client_sock)
             if 'ALL_BETS_DONE' in msg:
-                Server.__add_agency_done(msg, client_sock, clients_done)
-                Server.__check_all_agencies_done(clients_done, active_sockets_clients, clients_size)
+                agency_process = msg.split(',')[1]
+                #Server.__check_all_agencies_done(clients_done, active_sockets_clients, clients_size)
                 break
             else:
                 answer_msg = process_batch_bets(msg)
                 Server.__answer_socket(client_sock, answer_msg)
+        
+        logging.info(f"action: waiting_at_barrier | client_socket: {client_sock}")
+        barrier.wait()
+        logging.info(f"action: barrier_passed | client_socket: {client_sock}")
+
+        winners = None
+        with lock: 
+            logging.info("action: sorteo | result: success")
+            winners = check_winners() 
+
+        if winners: 
+            for agency, winner_msg in winners.items():
+                if agency == agency_process:
+                    logging.info(f"action: sorteo | result: success | agency: {agency} | winners: {winner_msg}")
+                    Server.__answer_socket(client_sock, winner_msg)
 
     def __accept_new_connection(self):
         """
